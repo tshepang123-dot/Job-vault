@@ -1,0 +1,186 @@
+# Job Vault: Pseudocode
+
+A job application tracker with six pages: Landing, Registration, Login, Home, Job details, and 404.
+
+Data kept in browser storage (localStorage):
+- `users`: list of { username, password }
+- `jobs`: list of job records
+- `currentUser`: the logged-in username, or null
+
+---
+
+## 1. Start app
+
+```text
+START APP
+  LOAD users from storage        (or empty list)
+  LOAD jobs from storage         (or empty list)
+  LOAD currentUser from storage  (or null)
+  SHOW the page that matches the current address
+END
+```
+
+---
+
+## 2. Router
+
+```text
+ROUTER (path)
+  "/"            -> show LandingPage
+  "/register"    -> show RegisterPage
+  "/login"       -> show LoginPage
+  "/home"        -> if currentUser exists
+                      show HomePage
+                    else
+                      go to "/login"
+  "/job/:id"     -> if currentUser exists
+                      show JobPage(id)
+                    else
+                      go to "/login"
+  anything else  -> show NotFoundPage
+END
+
+
+## 3. Register
+
+```text
+REGISTER (username, password)
+  IF username is empty OR password is empty
+    show "Enter both a username and a password"
+    STOP
+
+  IF length of password < 6
+    show "Password must be at least 6 characters"
+    STOP
+
+  IF username already exists in users
+    show "That username is taken. Try another"
+    STOP
+
+  ADD { username, password } to users
+  SET currentUser = username
+  SAVE users and currentUser to storage
+  GO TO "/home"
+END
+
+
+## 4. Login
+
+```text
+LOGIN (username, password)
+  IF username is empty OR password is empty
+    show "Enter both a username and a password"
+    STOP
+
+  FIND a user in users WHERE username AND password both match
+
+  IF no user found
+    show "Username or password is incorrect"
+    STOP
+
+  SET currentUser = username
+  SAVE currentUser to storage
+  GO TO "/home"
+END
+
+
+## 5. Logout
+
+```text
+LOGOUT
+  SET currentUser = null
+  SAVE currentUser to storage
+  GO TO "/"
+END
+
+
+## 6. Protect a page
+
+```text
+PROTECTED_ROUTE (page)
+  IF currentUser exists
+    show page
+  ELSE
+    go to "/login"
+END
+
+
+## 7. Add job
+
+```text
+ADD_JOB (title, company, address, contact, status)
+  IF title is empty OR company is empty
+    show "Job title and company are required"
+    STOP
+
+  CREATE job
+    id          = highest existing id + 1
+    title       = title
+    company     = company
+    status      = status        (Applied, Interview, Offer, or Rejected)
+    dateApplied = today's date
+    address     = address       (or "Not added")
+    contact     = contact       (or "Not added")
+
+  ADD job to the FRONT of jobs
+  SAVE jobs to storage
+  CLEAR the form fields
+END
+
+
+## 8. Show the job list and totals (Home page)
+
+```text
+SHOW_HOME
+  total      = number of jobs
+  interviews = number of jobs WHERE status = "Interview"
+  offers     = number of jobs WHERE status = "Offer"
+
+  DISPLAY the Add application form
+  DISPLAY total, interviews, offers
+
+  IF jobs is empty
+    show "No applications yet. Add your first one"
+  ELSE
+    FOR EACH job in jobs
+      DISPLAY a job card with title, company, date applied, and status badge
+      WHEN the card is clicked, GO TO "/job/" + job.id
+END
+
+## 9. Show job details
+
+```text
+SHOW_JOB (id)
+  FIND job in jobs WHERE job.id equals id
+
+  IF job not found
+    show NotFoundPage
+    STOP
+
+  DISPLAY
+    status badge, title, company, date applied
+    duties
+    requirements
+    notes
+    address
+    contact details
+    salary
+    work type
+    interview date
+
+  DISPLAY a "Back to my applications" link to "/home"
+END
+
+
+## 10. Not found page
+
+```text
+NOT_FOUND
+  DISPLAY "404" and "We can't find that page"
+  IF currentUser exists
+    DISPLAY a button to "/home"
+  ELSE
+    DISPLAY a button to "/"
+END
+
+
